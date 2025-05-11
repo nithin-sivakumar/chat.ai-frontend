@@ -11,7 +11,8 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const messagesEndRef = useRef(null); // For auto-scrolling
+  const messagesEndRef = useRef(null); // For auto-scrolling messages
+  const inputRef = useRef(null); // For auto-focusing input
 
   // --- Effects ---
 
@@ -31,6 +32,13 @@ const App = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Effect to auto-focus the input field
+  useEffect(() => {
+    if (inputRef.current && !isLoading && conversationId) {
+      inputRef.current.focus();
+    }
+  }, [isLoading, conversationId, messages]); // Re-focus when loading state changes, conversation is ready, or after new messages
+
   // --- API Helper Functions ---
 
   const fetchHistory = async (convId) => {
@@ -43,13 +51,16 @@ const App = () => {
       );
       if (!response.ok) {
         if (response.status === 404) {
-          // Conversation not found on backend, might be a new one client-side
           console.warn(
             "Conversation not found on backend, starting fresh or check ID."
           );
-          setMessages([]); // Clear messages if history is not found
-          // Optionally, force a new conversation if this happens unexpectedly
-          // startNewConversation();
+          setMessages([]);
+          // If a 404 occurs, it's often better to start a new conversation
+          // or inform the user clearly. Forcing a new one here:
+          // startNewConversation(); // Uncomment if you prefer to auto-start new on 404
+          localStorage.removeItem("chatConversationId"); // Clear invalid ID
+          // Consider starting a new one if the old one is invalid
+          // For now, we let it be, user can click "New Chat" or it might be handled by startNewConversation() if called elsewhere
           return;
         }
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -57,7 +68,7 @@ const App = () => {
       const data = await response.json();
       setMessages(
         data.map((msg) => ({
-          id: msg.id, // Use the ID from the backend
+          id: msg.id,
           sender: msg.sender,
           content: msg.content,
           timestamp: msg.timestamp,
@@ -65,8 +76,9 @@ const App = () => {
       );
     } catch (err) {
       console.error("Failed to fetch history:", err);
-      setError("Failed to load message history. Please try again.");
-      setMessages([]); // Clear messages on error
+      setError("Failed to load message history. Starting a new chat.");
+      setMessages([]);
+      startNewConversation(); // Start new if history fails critically
     } finally {
       setIsLoading(false);
     }
@@ -75,23 +87,22 @@ const App = () => {
   const startNewConversation = async () => {
     setIsLoading(true);
     setError(null);
+    // Clear messages immediately for responsiveness
+    setMessages([]);
+    // Set conversationId to null temporarily so input might disable
+    // setConversationId(null); // Optional: clear while generating new one
+
     try {
-      // Option 1: Use the backend endpoint to generate an ID (if you want backend to always create it)
-      // const response = await fetch(`${API_BASE_URL}/chat/new`, { method: "POST" });
-      // if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      // const data = await response.json();
-      // const newConvId = data.conversation_id;
-
-      // Option 2: Generate UUID on client-side (simpler for this setup)
       const newConvId = uuidv4();
-
       setConversationId(newConvId);
       localStorage.setItem("chatConversationId", newConvId);
-      setMessages([]); // Clear old messages
       console.log("Started new conversation:", newConvId);
+      // No need to fetch history for a brand new conversation, messages are already cleared
     } catch (err) {
       console.error("Failed to start new conversation:", err);
       setError("Failed to start a new conversation. Please refresh.");
+      setConversationId(null); // Ensure no stale ID on error
+      localStorage.removeItem("chatConversationId");
     } finally {
       setIsLoading(false);
     }
@@ -104,13 +115,14 @@ const App = () => {
     if (!userInput.trim() || !conversationId) return;
 
     const userMessage = {
-      id: uuidv4(), // Temporary client-side ID
+      id: uuidv4(),
       sender: "user",
       content: userInput.trim(),
       timestamp: new Date().toISOString(),
     };
 
     setMessages((prevMessages) => [...prevMessages, userMessage]);
+    const currentInput = userInput; // Store before clearing
     setUserInput("");
     setIsLoading(true);
     setError(null);
@@ -123,14 +135,14 @@ const App = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ content: userMessage.content }),
+          body: JSON.stringify({ content: userMessage.content }), // Send original userMessage.content
         }
       );
 
       if (!response.ok) {
         const errorData = await response
           .json()
-          .catch(() => ({ detail: "Unknown error" }));
+          .catch(() => ({ detail: "Unknown server error during send." }));
         throw new Error(
           errorData.detail || `HTTP error! status: ${response.status}`
         );
@@ -138,7 +150,7 @@ const App = () => {
 
       const aiMessageData = await response.json();
       const aiMessage = {
-        id: aiMessageData.id, // Use the ID from the backend
+        id: aiMessageData.id,
         sender: "assistant",
         content: aiMessageData.content,
         timestamp: aiMessageData.timestamp,
@@ -147,8 +159,11 @@ const App = () => {
     } catch (err) {
       console.error("Failed to send message:", err);
       setError(err.message || "Failed to get a response. Please try again.");
-      // Optional: remove the optimistically added user message if AI fails
-      // setMessages(prevMessages => prevMessages.filter(msg => msg.id !== userMessage.id));
+      // Optional: Revert optimistic update or mark message as failed
+      setMessages((prevMessages) =>
+        prevMessages.filter((msg) => msg.id !== userMessage.id)
+      );
+      setUserInput(currentInput); // Restore user input if send failed
     } finally {
       setIsLoading(false);
     }
@@ -161,14 +176,26 @@ const App = () => {
 
   // --- Render ---
   return (
-    <div className="w-full h-screen p-5 bg-stone-300 flex flex-col items-center justify-center">
-      <div className="w-full h-full rounded-xl bg-stone-200 shadow-xl flex flex-col items-start justify-start overflow-hidden">
+    // Outermost container: takes full screen height, prevents its own scrolling, and centers its content.
+    <div className="overflow-y-hidden w-full h-screen p-5 bg-stone-300 flex flex-col items-center justify-center">
+      {/*
+        Main chat UI container:
+        - `flex-1`: Takes up available vertical space within the parent flex container.
+        - `min-h-0`: Crucial for flex children that need to scroll internally. Prevents content from blowing out the flex item's size.
+        - `overflow-hidden`: Ensures that its children (header, messages, input) don't cause this container to overflow.
+          The message area *inside* this will have `overflow-y-auto`.
+      */}
+      <div className="w-full flex-1 min-h-0 rounded-xl bg-stone-200 shadow-xl flex flex-col items-start justify-start overflow-hidden">
         {/* Header */}
-        <div className="w-full h-20 border-b border-stone-400 shadow-md flex items-center justify-between px-4">
-          <h1 className="text-xl font-semibold text-stone-700">Chat with AI</h1>
+        <div className="w-full h-20 border-b border-stone-400 shadow-md flex items-center justify-between px-4 shrink-0">
+          {" "}
+          {/* shrink-0 to prevent header from shrinking */}
+          <h1 className="text-xl font-semibold text-stone-700">
+            Chat with Bot (v1.6.4)
+          </h1>
           <button
             onClick={startNewConversation}
-            className="px-4 py-2 cursor-pointer bg-stone-400 hover:bg-stone-500 text-white rounded-lg text-sm"
+            className="px-4 py-2 cursor-pointer bg-stone-300 hover:bg-stone-400 text-black shadow-xl rounded-lg text-sm"
             disabled={isLoading}
           >
             New Chat
@@ -178,13 +205,13 @@ const App = () => {
         {/* Message Display Area */}
         <div className="flex-1 w-full p-4 overflow-y-auto space-y-4">
           {error && (
-            <div className="p-2 bg-red-200 text-red-700 rounded-md">
-              {error}
+            <div className="p-3 mb-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              <strong>Error:</strong> {error}
             </div>
           )}
           {messages.map((msg) => (
             <div
-              key={msg.id || msg.timestamp} // Backend ID is preferred
+              key={msg.id || msg.timestamp}
               className={`flex ${
                 msg.sender === "user" ? "justify-end" : "justify-start"
               }`}
@@ -197,33 +224,29 @@ const App = () => {
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                {/* Timestamp display (optional) */}
                 {/* <p className="text-xs mt-1 opacity-70 text-right">
-                  {new Date(msg.timestamp).toLocaleString([], {
-                    // hour: 'numeric', // or '2-digit'
-                    // minute: 'numeric', // or '2-digit'
-                    // Use more specific options for consistent formatting
-                    // year: "numeric",
-                    // month: "numeric",
-                    // day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    // second: '2-digit', // optional
-                    // timeZoneName: 'short' // optional, e.g., "PST", "EDT"
+                  {new Date(msg.timestamp).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
                   })}
                 </p> */}
               </div>
             </div>
           ))}
-          <div ref={messagesEndRef} /> {/* For auto-scrolling */}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area */}
-        <div className="w-full h-auto min-h-[3.5rem] border-t border-stone-400 shadow-md p-2">
+        <div className="w-full h-auto min-h-[3.5rem] border-t border-stone-400 shadow-md p-2 shrink-0">
+          {" "}
+          {/* shrink-0 to prevent input area from shrinking */}
           <form
             className="w-full h-full flex items-center justify-center gap-2"
             onSubmit={handleSendMessage}
           >
             <input
+              ref={inputRef} // Assign ref here
               type="text"
               name="message"
               id="message"
@@ -269,7 +292,10 @@ const App = () => {
           </form>
         </div>
       </div>
-      <p className="text-xs text-stone-600 mt-2">
+      {/* Conversation ID display remains a sibling, fitting due to flex-1 on the chat UI container */}
+      <p className="text-xs text-stone-600 mt-2 shrink-0">
+        {" "}
+        {/* shrink-0 to prevent this from shrinking if space is tight */}
         Conversation ID: {conversationId || "Initializing..."}
       </p>
     </div>
