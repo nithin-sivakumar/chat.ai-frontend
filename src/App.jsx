@@ -197,7 +197,7 @@ const App = () => {
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                <p className="text-xs mt-1 opacity-70 text-right">
+                {/* <p className="text-xs mt-1 opacity-70 text-right">
                   {new Date(msg.timestamp).toLocaleString([], {
                     // hour: 'numeric', // or '2-digit'
                     // minute: 'numeric', // or '2-digit'
@@ -210,7 +210,7 @@ const App = () => {
                     // second: '2-digit', // optional
                     // timeZoneName: 'short' // optional, e.g., "PST", "EDT"
                   })}
-                </p>
+                </p> */}
               </div>
             </div>
           ))}
