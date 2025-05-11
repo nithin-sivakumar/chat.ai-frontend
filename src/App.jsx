@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { v4 as uuidv4 } from "uuid"; // For generating conversation IDs
 
-const API_BASE_URL = "http://localhost:8000"; // Your FastAPI backend URL
+const API_BASE_URL = import.meta.env.VITE_APP_URL; // Your FastAPI backend URL
 
 const App = () => {
   const [userInput, setUserInput] = useState("");
