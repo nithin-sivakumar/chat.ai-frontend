@@ -1,6 +1,7 @@
 // src/App.js
 import React, { useState, useEffect, useRef } from "react";
 import { v4 as uuidv4 } from "uuid"; // For generating conversation IDs
+import Markdown from "react-markdown";
 
 const API_BASE_URL = import.meta.env.VITE_APP_URL; // Your FastAPI backend URL
 
@@ -10,6 +11,9 @@ const App = () => {
   const [conversationId, setConversationId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [tip, setTip] = useState(
+    "Tip: Use () for giving instructions and ** for roleplays\n\nIt's always good to introduce yourself. Tell me your name and gender, your preferences, etc. to help me serve you better."
+  );
 
   const messagesEndRef = useRef(null); // For auto-scrolling messages
   const inputRef = useRef(null); // For auto-focusing input
@@ -177,7 +181,7 @@ const App = () => {
   // --- Render ---
   return (
     // Outermost container: takes full screen height, prevents its own scrolling, and centers its content.
-    <div className="overflow-y-hidden w-full h-screen p-5 bg-stone-300 flex flex-col items-center justify-center">
+    <div className="overflow-y-hidden w-full h-screen p-3 bg-stone-900 flex flex-col items-center justify-center">
       {/*
         Main chat UI container:
         - `flex-1`: Takes up available vertical space within the parent flex container.
@@ -185,17 +189,15 @@ const App = () => {
         - `overflow-hidden`: Ensures that its children (header, messages, input) don't cause this container to overflow.
           The message area *inside* this will have `overflow-y-auto`.
       */}
-      <div className="w-full flex-1 min-h-0 rounded-xl bg-stone-200 shadow-xl flex flex-col items-start justify-start overflow-hidden">
+      <div className="w-full flex-1 min-h-0 rounded-xl bg-stone-800 text-white shadow-xl flex flex-col items-start justify-start overflow-hidden">
         {/* Header */}
         <div className="w-full h-20 border-b border-stone-400 shadow-md flex items-center justify-between px-4 shrink-0">
           {" "}
           {/* shrink-0 to prevent header from shrinking */}
-          <h1 className="text-xl font-semibold text-stone-700">
-            Chat with Bot (v1.6.4)
-          </h1>
+          <h1 className="text-xl font-semibold">CompanionAI (v1.6.5)</h1>
           <button
             onClick={startNewConversation}
-            className="px-4 py-2 cursor-pointer bg-stone-300 hover:bg-stone-400 text-black shadow-xl rounded-lg text-sm"
+            className="px-4 py-2 cursor-pointer bg-stone-700 hover:bg-stone-600 text-white shadow-xl rounded-lg text-sm"
             disabled={isLoading}
           >
             New Chat
@@ -203,7 +205,18 @@ const App = () => {
         </div>
 
         {/* Message Display Area */}
-        <div className="flex-1 w-full p-4 overflow-y-auto space-y-4">
+        <div
+          className={`flex-1 w-full space-y-4 ${
+            messages.length === 0 ? "overflow-hidden" : "overflow-y-auto"
+          }`}
+        >
+          {messages.length === 0 && (
+            <div className="w-full h-full flex items-center justify-center">
+              <p className="text-gray-400 text-center px-2">
+                <Markdown>{tip}</Markdown>
+              </p>
+            </div>
+          )}
           {error && (
             <div className="p-3 mb-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
               <strong>Error:</strong> {error}
@@ -220,7 +233,7 @@ const App = () => {
                 className={`max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-xl shadow ${
                   msg.sender === "user"
                     ? "bg-purple-200 text-black border border-black"
-                    : "bg-stone-300 text-stone-800 border border-black"
+                    : "bg-stone-700 text-white border border-black"
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -252,12 +265,16 @@ const App = () => {
               id="message"
               autoComplete="off"
               placeholder={
-                isLoading ? "AI is thinking..." : "Type a message..."
+                isLoading
+                  ? "AI is thinking..."
+                  : messages.length === 0
+                  ? "Your name and gender..."
+                  : "Type a message..."
               }
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               disabled={isLoading || !conversationId}
-              className="flex-1 bg-stone-300 border border-stone-400 p-2 rounded-xl outline-none focus-within:ring-1 ring-purple-500 disabled:opacity-50"
+              className="flex-1 bg-stone-700 border border-stone-400 p-2 rounded-xl outline-none focus-within:ring-1 ring-purple-500 disabled:opacity-50"
             />
             <button
               type="submit"
