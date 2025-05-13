@@ -206,7 +206,7 @@ const App = () => {
 
         {/* Message Display Area */}
         <div
-          className={`flex-1 px-2 w-full space-y-4 ${
+          className={`flex-1 p-2 w-full space-y-4 ${
             messages.length === 0 ? "overflow-hidden" : "overflow-y-auto"
           }`}
         >
