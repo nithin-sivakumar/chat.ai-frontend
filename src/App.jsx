@@ -232,7 +232,7 @@ const App = () => {
               <div
                 className={`max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-xl shadow ${
                   msg.sender === "user"
-                    ? "bg-fuchsia-200 text-black border border-black"
+                    ? "bg-amber-200 text-black border border-black"
                     : "bg-stone-700 text-white border border-black"
                 }`}
               >
@@ -274,12 +274,12 @@ const App = () => {
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               disabled={isLoading || !conversationId}
-              className="flex-1 bg-stone-700 border border-stone-400 p-2 rounded-xl outline-none focus-within:ring-1 ring-fuchsia-500 disabled:opacity-50"
+              className="flex-1 bg-stone-700 border border-stone-400 p-2 rounded-xl outline-none focus-within:ring-1 ring-amber-500 disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={isLoading || !userInput.trim() || !conversationId}
-              className="px-8 py-2 bg-fuchsia-500 hover:bg-fuchsia-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <svg
