@@ -259,7 +259,6 @@ const App = () => {
                 {msg.attachment && (
                   <iframe
                     src={msg.attachment}
-                    title="player"
                     className="mt-2 w-full aspect-square rounded-2xl"
                   />
                 )}
