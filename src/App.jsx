@@ -27,7 +27,9 @@ const App = () => {
       setConversationId(storedConversationId);
       fetchHistory(storedConversationId);
     } else {
-      startNewConversation();
+      // Do NOT auto-start a new conversation on mount
+      // Just wait for user to click "New Chat"
+      setConversationId(null);
     }
   }, []);
 
@@ -50,9 +52,7 @@ const App = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/chat/${convId}/history?limit=100`
-      );
+      const response = await fetch(`${API_BASE_URL}/chat/${convId}/history`);
       if (!response.ok) {
         if (response.status === 404) {
           console.warn(
@@ -62,7 +62,7 @@ const App = () => {
           // If a 404 occurs, it's often better to start a new conversation
           // or inform the user clearly. Forcing a new one here:
           // startNewConversation(); // Uncomment if you prefer to auto-start new on 404
-          localStorage.removeItem("chatConversationId"); // Clear invalid ID
+          // localStorage.removeItem("chatConversationId"); // Clear invalid ID
           // Consider starting a new one if the old one is invalid
           // For now, we let it be, user can click "New Chat" or it might be handled by startNewConversation() if called elsewhere
           return;
@@ -70,8 +70,10 @@ const App = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
+      console.log(`Fetched history for conversation ${convId}:`);
+      console.log(data);
       setMessages(
-        data.map((msg) => ({
+        data.payload.map((msg) => ({
           id: msg.id,
           sender: msg.sender,
           content: msg.content,
@@ -91,27 +93,26 @@ const App = () => {
   const startNewConversation = async () => {
     setIsLoading(true);
     setError(null);
-    // Clear messages immediately for responsiveness
     setMessages([]);
-    // Set conversationId to null temporarily so input might disable
-    // setConversationId(null); // Optional: clear while generating new one
 
     try {
-      const newConvId = uuidv4();
-      setConversationId(newConvId);
-      localStorage.setItem("chatConversationId", newConvId);
-      console.log("Started new conversation:", newConvId);
-      // No need to fetch history for a brand new conversation, messages are already cleared
+      const response = await fetch(`${API_BASE_URL}/chat/new`, {
+        method: "POST",
+      });
+      if (!response.ok) throw new Error("Failed to start conversation");
+      const data = await response.json();
+
+      setConversationId(data.payload.conversation_id);
+      localStorage.setItem("chatConversationId", data.payload.conversation_id);
     } catch (err) {
       console.error("Failed to start new conversation:", err);
-      setError("Failed to start a new conversation. Please refresh.");
-      setConversationId(null); // Ensure no stale ID on error
+      setError("Could not start new conversation.");
+      setConversationId(null);
       localStorage.removeItem("chatConversationId");
     } finally {
       setIsLoading(false);
     }
   };
-
   // --- Event Handlers ---
 
   const handleSendMessage = async (e) => {
@@ -152,7 +153,8 @@ const App = () => {
         );
       }
 
-      const aiMessageData = await response.json();
+      const jsonData = await response.json();
+      const aiMessageData = jsonData.payload;
       const aiMessage = {
         id: aiMessageData.id,
         sender: "assistant",
@@ -212,9 +214,21 @@ const App = () => {
         >
           {messages.length === 0 && (
             <div className="w-full h-full flex items-center justify-center">
-              <p className="text-gray-400 text-center px-2">
+              <div className="text-gray-400 text-center px-2">
                 <Markdown>{tip}</Markdown>
-              </p>
+                {!conversationId && (
+                  <div className="w-full mt-8 h-full flex items-center justify-center">
+                    <div className="text-gray-400 text-center px-2">
+                      <p>No active conversation.</p>
+                      <p>
+                        Click{" "}
+                        <b className="font-bold text-amber-600/50">New Chat</b>{" "}
+                        to start one!
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {error && (
@@ -222,9 +236,9 @@ const App = () => {
               <strong>Error:</strong> {error}
             </div>
           )}
-          {messages.map((msg) => (
+          {messages.map((msg, index) => (
             <div
-              key={msg.id || msg.timestamp}
+              key={index}
               className={`flex ${
                 msg.sender === "user" ? "justify-end" : "justify-start"
               }`}
