@@ -203,7 +203,7 @@ const App = () => {
         <div className="w-full h-20 border-b border-stone-400 shadow-md flex items-center justify-between px-4 shrink-0">
           {" "}
           {/* shrink-0 to prevent header from shrinking */}
-          <h1 className="text-xl font-semibold">CompanionAI (v1.7)</h1>
+          <h1 className="text-xl font-semibold">ComfyAI (v2.0)</h1>
           <button
             onClick={startNewConversation}
             className={`px-4 py-2 cursor-pointer shadow-xl rounded-lg text-sm disabled:cursor-not-allowed ${
