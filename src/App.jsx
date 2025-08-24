@@ -78,6 +78,7 @@ const App = () => {
           sender: msg.sender,
           content: msg.content,
           timestamp: msg.timestamp,
+          attachment: msg.attachment || null,
         }))
       );
     } catch (err) {
@@ -160,6 +161,7 @@ const App = () => {
         sender: "assistant",
         content: aiMessageData.content,
         timestamp: aiMessageData.timestamp,
+        attachment: aiMessageData.attachment || null,
       };
       setMessages((prevMessages) => [...prevMessages, aiMessage]);
     } catch (err) {
@@ -253,6 +255,15 @@ const App = () => {
                     .replaceAll("\n", "")
                     .replaceAll("  ", " ")}
                 </p>
+
+                {msg.attachment && (
+                  <iframe
+                    src={msg.attachment}
+                    title="player"
+                    className="mt-2 w-full aspect-square rounded-2xl"
+                  />
+                )}
+
                 {/* Timestamp display (optional) */}
                 {/* <p className="text-xs mt-1 opacity-70 text-right">
                   {new Date(msg.timestamp).toLocaleTimeString([], {
