@@ -256,11 +256,25 @@ const App = () => {
                     .replaceAll("  ", " ")}
                 </p>
 
-                {msg.attachment && (
+                {/* {msg.attachment && (
                   <iframe
                     src={msg.attachment}
                     className="mt-2 w-full aspect-square rounded-2xl"
                   />
+                )} */}
+
+                {msg.attachment && (
+                  <video
+                    controls
+                    className="mt-2 w-full aspect-square rounded-2xl"
+                  >
+                    <source
+                      src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(
+                        msg.attachment
+                      )}`}
+                      type="video/mp4"
+                    />
+                  </video>
                 )}
 
                 {/* Timestamp display (optional) */}
