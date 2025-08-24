@@ -70,8 +70,8 @@ const App = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      console.log(`Fetched history for conversation ${convId}:`);
-      console.log(data);
+      // console.log(`Fetched history for conversation ${convId}:`);
+      // console.log(data);
       setMessages(
         data.payload.map((msg) => ({
           id: msg.id,
@@ -266,7 +266,11 @@ const App = () => {
                 {msg.attachment && (
                   <video
                     controls
-                    className="mt-2 w-full aspect-square rounded-2xl"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="mt-2 object-center object-cover aspect-square rounded-2xl"
                   >
                     <source
                       src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(
