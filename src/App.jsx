@@ -184,6 +184,11 @@ const App = () => {
   return (
     // Outermost container: takes full screen height, prevents its own scrolling, and centers its content.
     <div className="overflow-y-hidden w-full h-screen p-3 bg-stone-900 flex flex-col items-center justify-center">
+      {isLoading && (
+        <div className="fixed top-0 left-0 w-full h-screen bg-stone-950/90 flex items-center justify-center z-40">
+          <div className="border-4 border-stone-200 border-t-blue-500 size-12 animate-spin rounded-full"></div>
+        </div>
+      )}
       {/*
         Main chat UI container:
         - `flex-1`: Takes up available vertical space within the parent flex container.
@@ -199,7 +204,11 @@ const App = () => {
           <h1 className="text-xl font-semibold">CompanionAI (v1.7)</h1>
           <button
             onClick={startNewConversation}
-            className="px-4 py-2 cursor-pointer bg-stone-700 hover:bg-stone-600 text-white shadow-xl rounded-lg text-sm"
+            className={`px-4 py-2 cursor-pointer shadow-xl rounded-lg text-sm disabled:cursor-not-allowed ${
+              messages.length === 0
+                ? "bg-blue-700 text-white hover:bg-blue-600"
+                : "bg-stone-700 text-white hover:bg-stone-600"
+            } `}
             disabled={isLoading}
           >
             New Chat
@@ -216,18 +225,6 @@ const App = () => {
             <div className="w-full h-full flex items-center justify-center">
               <div className="text-gray-400 text-center px-2">
                 <Markdown>{tip}</Markdown>
-                {!conversationId && (
-                  <div className="w-full mt-8 h-full flex items-center justify-center">
-                    <div className="text-gray-400 text-center px-2">
-                      <p>No active conversation.</p>
-                      <p>
-                        Click{" "}
-                        <b className="font-bold text-amber-600/50">New Chat</b>{" "}
-                        to start one!
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -244,13 +241,18 @@ const App = () => {
               }`}
             >
               <div
-                className={`max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-xl shadow ${
+                className={`max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-xl shadow font-semibold ${
                   msg.sender === "user"
-                    ? "bg-amber-200 text-black border border-black"
+                    ? "bg-blue-600 text-white border border-black"
                     : "bg-stone-700 text-white border border-black"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {msg.content
+                    .trim()
+                    .replaceAll("\n", "")
+                    .replaceAll("  ", " ")}
+                </p>
                 {/* Timestamp display (optional) */}
                 {/* <p className="text-xs mt-1 opacity-70 text-right">
                   {new Date(msg.timestamp).toLocaleTimeString([], {
@@ -288,12 +290,12 @@ const App = () => {
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               disabled={isLoading || !conversationId}
-              className="flex-1 bg-stone-700 border border-stone-400 p-2 rounded-xl outline-none focus-within:ring-1 ring-amber-500 disabled:opacity-50"
+              className="flex-1 bg-stone-700 border border-stone-400 p-2 rounded-xl outline-none disabled:cursor-not-allowed focus-within:ring-1 ring-blue-500 disabled:opacity-50 placeholder:text-blue-300"
             />
             <button
               type="submit"
               disabled={isLoading || !userInput.trim() || !conversationId}
-              className="px-8 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <svg
