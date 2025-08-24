@@ -267,63 +267,65 @@ const App = () => {
         </div>
 
         {/* Input Area */}
-        <div className="w-full h-auto min-h-[3.5rem] border-t border-stone-400 shadow-md p-2 shrink-0">
-          {" "}
-          {/* shrink-0 to prevent input area from shrinking */}
-          <form
-            className="w-full h-full flex items-center justify-center gap-2"
-            onSubmit={handleSendMessage}
-          >
-            <input
-              ref={inputRef} // Assign ref here
-              type="text"
-              name="message"
-              id="message"
-              autoComplete="off"
-              placeholder={
-                isLoading
-                  ? "AI is thinking..."
-                  : messages.length === 0
-                  ? "Your name and gender..."
-                  : "Type a message..."
-              }
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              disabled={isLoading || !conversationId}
-              className="flex-1 bg-stone-700 border border-stone-400 p-2 rounded-xl outline-none disabled:cursor-not-allowed focus-within:ring-1 ring-blue-500 disabled:opacity-50 placeholder:text-blue-300"
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !userInput.trim() || !conversationId}
-              className="px-8 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+        {conversationId && (
+          <div className="w-full h-auto min-h-[3.5rem] border-t border-stone-400 shadow-md p-2 shrink-0">
+            {" "}
+            {/* shrink-0 to prevent input area from shrinking */}
+            <form
+              className="w-full h-full flex items-center justify-center gap-2"
+              onSubmit={handleSendMessage}
             >
-              {isLoading ? (
-                <svg
-                  className="animate-spin h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              ) : (
-                "Send"
-              )}
-            </button>
-          </form>
-        </div>
+              <input
+                ref={inputRef} // Assign ref here
+                type="text"
+                name="message"
+                id="message"
+                autoComplete="off"
+                placeholder={
+                  isLoading
+                    ? "AI is thinking..."
+                    : messages.length === 0
+                    ? "Your name and gender..."
+                    : "Type a message..."
+                }
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                disabled={isLoading || !conversationId}
+                className="flex-1 bg-stone-700 border border-stone-400 p-2 rounded-xl outline-none disabled:cursor-not-allowed focus-within:ring-1 ring-blue-500 disabled:opacity-50 placeholder:text-blue-300"
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !userInput.trim() || !conversationId}
+                className="px-8 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                ) : (
+                  "Send"
+                )}
+              </button>
+            </form>
+          </div>
+        )}
       </div>
       {/* Conversation ID display remains a sibling, fitting due to flex-1 on the chat UI container */}
       <p className="text-xs text-stone-600 mt-2 shrink-0">
